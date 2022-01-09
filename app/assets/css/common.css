@@ -1,0 +1,67 @@
+/* html elements at x1 */
+body {
+    background:#FFF;
+    margin:0;
+    padding:0;
+}
+body * {
+    margin:0;
+    padding:0;
+    font-size:20px;
+    font-weight:200;
+    color:#000;
+    font-family:'Courier New', Courier, monospace
+}
+body.darkmode {
+    background:#000;
+}
+body.darkmode * {
+    color:#FFF;
+}
+body:not(.darkmode) *.darkmode {
+    display:none;
+}
+body.darkmode *.darkmode {
+    display:unset;
+}
+body header {
+    max-width:506px;
+    margin:auto;
+    margin-top:10px;
+    border-bottom:1px solid;
+    display:flex;
+    align-items:end;
+    justify-content:space-between;
+    flex-wrap:wrap;
+}
+body.darkmode header {
+    border-bottom:1px solid #FFF;
+}
+body header h1 {
+    display:flex;
+    align-items:center;
+    padding:5px 10px;
+    pointer-events: none;
+}
+body header h1 img {
+    height:32px;
+    margin:0px 5px;
+}
+body header span img {
+    height:26px;
+    margin:0px 10px;
+    cursor:pointer;
+    border-radius:15px;
+    border:1px solid #ffffff00;
+}
+body main {
+    max-width:506px;
+    margin:auto;
+    margin-top:10px;
+}
+body main canvas {
+    border: 3px double;
+}
+body.darkmode main canvas {
+    border-color:#FFF;
+}
