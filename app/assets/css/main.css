@@ -1,6 +1,6 @@
 /* html elements */
 body {
-    background:#FFF;
+    background:#efefef;
     margin:0;
     padding:0;
 }
@@ -9,14 +9,14 @@ body * {
     padding:0;
     font-size:20px;
     font-weight:200;
-    color:#000;
+    color:#090909;
     font-family:'Courier New', Courier, monospace
 }
 body.darkmode {
-    background:#000;
+    background:#090909;
 }
 body.darkmode * {
-    color:#FFF;
+    color:#efefef;
 }
 body:not(.darkmode) *.darkmode {
     display:none;
@@ -35,7 +35,7 @@ body header {
     flex-wrap:wrap;
 }
 body.darkmode header {
-    border-bottom:1px solid #FFF;
+    border-bottom:1px solid #efefef;
 }
 body header h1 {
     display:flex;
@@ -49,10 +49,13 @@ body header h1 img {
 }
 body header span img {
     height:26px;
-    margin:0px 10px;
+    margin:0px 5px;
     cursor:pointer;
     border-radius:15px;
     border:1px solid #ffffff00;
+}
+body.darkmode img:not(.darkmode) {
+    display:none;
 }
 body main {
     max-width:506px;
@@ -61,7 +64,9 @@ body main {
 }
 body main canvas {
     border: 3px double;
+    background:#fff;
 }
 body.darkmode main canvas {
     border-color:#FFF;
+    background:#000;
 }
