@@ -1,0 +1,17 @@
+{
+  "type": "module",
+  "name": "can-money-paint",
+  "version": "1.0.0",
+  "description": "Express server project using compression",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node websocket.js"
+  },
+  "dependencies": {
+    "uuid": "^8.3.2",
+    "ws": "^8.4.0"
+  },
+  "devDependencies": {},
+  "author": "Guillaume Bergeron Geoffroy",
+  "license": "UNLICENSED"
+}

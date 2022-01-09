@@ -1,33 +1,70 @@
 // I/o channel <-> Actions
 const Client = {
-    blackList: {}, // If another users is lying/tempering with data, he'll get shadowbanned
-    connectionPool: {},
+     // If another users is lying/tempering with data, he'll get shadowbanned
+    id: null,
+    blackList: {},
+    peerConnectionPool: {},
     socket: {
         value: null,
-        sendMessage: function(message) {
-            this.getSocket.value.send(message);
+        init: () => {
+            Client.id = util.getCookie('id');
+            Client.socket.sendMessage({
+                id: Client.id,
+                route: 'ConnManager',
+                resolve: 'getPeers',
+            })
         },
-        handleMessage: function(event) {
-            console.log(event)
-        }
+        sendMessage: (message) => {
+            Client.getSocket().send(JSON.stringify(message));
+        },
+        resolver: {
+            // Look up current connections and determine if there is 
+            evalConnexionPool: (data) => {
+                util.setCookie('id', data.id);
+                Client.peerConnectionPool[data.id] = {};
+                let newPeers = data.peers.filter((key) => !Client.peerConnectionPool[key])
+                console.log(newPeers)
+            },
+            receiveOffer: () => {},
+            receiveAnswer: () => {}
+        },
+        handleMessage: (data) => {
+            console.log(data)
+            return  data.resolve && Client.socket.resolver[data.resolve] ? Client.socket.resolver[data.resolve](data) : console.log(data)
+        },
     },
-    getSocket: socket.value ? socket.value : function() { // Initiale/Return WebSocket connection.
-        this.socket.value = new WebSocket('ws://localhost:8080', {
-            perMessageDeflate: false
-        });
-        // Connection opened
-        this.socket.value.addEventListener('open', function (event) {
-            console.log(event)
-        });
-        // Connection closed
-        this.socket.value.addEventListener('close', function (event) {
-            console.log(event)
-        });
-        // Listen for messages
-        socket.addEventListener('message', function (event) {
-            this.socket.handleMessage(event)
-        });
-    }
+     // Initiale/Return WebSocket connection.
+    getSocket: function() { 
+        return this.socket.value ? this.socket.value : function() {
+            Client.socket.value = new WebSocket('ws://localhost:8080');
+            // Connection opened
+            Client.socket.value.addEventListener('open', function (event) {
+                Client.socket.init();
+            });
+            // Connection closed / retry every 1 sec
+            Client.socket.value.addEventListener('close', function (event) {
+                console.log(event)
+                setTimeout(() => {
+                    Client.socket.value = null;
+                    Client.getSocket()
+                }, 1000)
+            });
+            // Listen for messages
+            Client.socket.value.addEventListener('message', function (event) {
+                Client.socket.handleMessage(JSON.parse(event.data))
+            });
+        }();
+    },
+    // TURN server config for signaling
+    iceConfiguration: {
+        iceServers: [
+            {
+                urls: 'turn:localhost:19403',
+                username: 'optional-username',
+                credentials: 'auth-token'
+            }
+        ]
+    },
 }
 Client.getSocket();
 
