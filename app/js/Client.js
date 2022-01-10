@@ -50,9 +50,6 @@ const Client = {
                 resolve: 'getPeers',
             })
         },
-        sendMessage: (message) => {
-            Client.Socket.getSocket().send(JSON.stringify(message));
-        },
         resolver: {
             // Look up current connections and determine if there is 
             evalConnectionPool: (data) => {
@@ -68,6 +65,9 @@ const Client = {
         handleMessage: async (data) => {
             console.log(data)
             return await data.resolve && Client.Socket.resolver[data.resolve] ? Client.Socket.resolver[data.resolve](data) : console.log(data)
+        },
+        sendMessage: (message) => {
+            Client.Socket.getSocket().send(JSON.stringify(message));
         },
     },
     WebRTC : {
