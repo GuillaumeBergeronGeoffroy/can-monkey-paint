@@ -1,72 +1,87 @@
 // I/o channel <-> Actions
 const Client = {
-     // If another users is lying/tempering with data, he'll get shadowbanned
     id: null,
-    blackList: {},
-    peerConnectionPool: {},
-    socket: {
-        value: null,
+    Peers: {
+        peers: {},
+    },
+    MessageQueue: {
+        process: true,
+        messageQueue: [],
+        pull: async () => {
+            if(Client.MessageQueue.process && Client.MessageQueue.messageQueue.length) {
+                Client.MessageQueue.process = false;
+                var message = Client.MessageQueue.messageQueue.shift();
+                var result = await Client[message.type].handleMessage(message.data);
+                Client.MessageQueue.process = true;
+                Client.MessageQueue.pull();
+            }
+        },
+    },
+    Socket: {
+        socket: null,
+         // Initiale/Return WebSocket connection.
+        getSocket: function() { 
+            return Client.Socket.socket ? Client.Socket.socket : function() {
+                Client.Socket.socket = new WebSocket('ws://localhost:8080');
+                // Connection opened
+                Client.Socket.socket.addEventListener('open', function (event) {
+                    Client.Socket.init();
+                });
+                // Connection closed / retry every 1 sec
+                Client.Socket.socket.addEventListener('close', function (event) {
+                    console.log(event)
+                    setTimeout(() => {
+                        Client.Socket.socket = null;
+                        Client.Socket.getSocket()
+                    }, 1000)
+                });
+                // Listen for messages
+                Client.Socket.socket.addEventListener('message', function (event) {
+                    Client.MessageQueue.messageQueue.push({type:'Socket', data: JSON.parse(event.data)});
+                    Client.MessageQueue.pull();
+                });
+            }();
+        },
         init: () => {
             Client.id = util.getCookie('id');
-            Client.socket.sendMessage({
+            Client.Socket.sendMessage({
                 id: Client.id,
                 route: 'ConnManager',
                 resolve: 'getPeers',
             })
         },
         sendMessage: (message) => {
-            Client.getSocket().send(JSON.stringify(message));
+            Client.Socket.getSocket().send(JSON.stringify(message));
         },
         resolver: {
             // Look up current connections and determine if there is 
-            evalConnexionPool: (data) => {
+            evalConnectionPool: (data) => {
                 util.setCookie('id', data.id);
-                Client.peerConnectionPool[data.id] = {};
-                let newPeers = data.peers.filter((key) => !Client.peerConnectionPool[key])
+                Client.Peers.peers[data.id] = {};
+                let newPeers = data.peers.filter((key) => !Client.Peers.peers[key])
                 console.log(newPeers)
+                // Initiate peerConnection
             },
             receiveOffer: () => {},
             receiveAnswer: () => {}
         },
-        handleMessage: (data) => {
+        handleMessage: async (data) => {
             console.log(data)
-            return  data.resolve && Client.socket.resolver[data.resolve] ? Client.socket.resolver[data.resolve](data) : console.log(data)
+            return await data.resolve && Client.Socket.resolver[data.resolve] ? Client.Socket.resolver[data.resolve](data) : console.log(data)
         },
     },
-     // Initiale/Return WebSocket connection.
-    getSocket: function() { 
-        return this.socket.value ? this.socket.value : function() {
-            Client.socket.value = new WebSocket('ws://localhost:8080');
-            // Connection opened
-            Client.socket.value.addEventListener('open', function (event) {
-                Client.socket.init();
-            });
-            // Connection closed / retry every 1 sec
-            Client.socket.value.addEventListener('close', function (event) {
-                console.log(event)
-                setTimeout(() => {
-                    Client.socket.value = null;
-                    Client.getSocket()
-                }, 1000)
-            });
-            // Listen for messages
-            Client.socket.value.addEventListener('message', function (event) {
-                Client.socket.handleMessage(JSON.parse(event.data))
-            });
-        }();
-    },
-    // TURN server config for signaling
-    iceConfiguration: {
-        iceServers: [
-            {
-                urls: 'turn:localhost:19403',
-                username: 'optional-username',
-                credentials: 'auth-token'
-            }
-        ]
+    WebRTC : {
+        // STUN server config for Internet Connectivity Establishment without TURN for now
+        iceConfig: {
+            iceServers: [
+                {
+                    urls: 'stun:stun.l.google.com:19302',
+                }
+            ]
+        },
     },
 }
-Client.getSocket();
+Client.Socket.getSocket();
 
 
 
