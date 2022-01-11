@@ -30,7 +30,7 @@ export const ConnManager = {
     resolver: {
         getPeers: (data) => {
             return {
-                action: 'sendTo',
+                resolve: 'send',
                 ws: data.ws,
                 data: {
                     resolve: 'evalConnectionPool',

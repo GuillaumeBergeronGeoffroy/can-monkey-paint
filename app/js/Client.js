@@ -30,9 +30,9 @@ const Client = {
                 // Connection closed / retry every 1 sec
                 Client.Socket.socket.addEventListener('close', function (event) {
                     console.log(event)
+                    Client.Socket.socket = null;
                     setTimeout(() => {
-                        Client.Socket.socket = null;
-                        Client.Socket.getSocket()
+                        Client.Socket.getSocket();
                     }, 1000)
                 });
                 // Listen for messages
