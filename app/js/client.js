@@ -1,6 +1,16 @@
 // I/o channel <-> Actions
 const Client = {
     id: null,
+    getId: () => {
+        Client.id = util.getCookie('id');
+    },
+    setId: (id) => {
+        if(id && Client.id != id) {
+            util.setCookie('id', id);
+            Client.getId()
+        }
+        return true;
+    },
     Peers: {
         peers: {},
     },
@@ -19,13 +29,17 @@ const Client = {
     },
     Socket: {
         socket: null,
-         // Initiale/Return WebSocket connection.
+        // Initiale/Return WebSocket connection.
         getSocket: function() { 
             return Client.Socket.socket ? Client.Socket.socket : function() {
                 Client.Socket.socket = new WebSocket('ws://localhost:8080');
                 // Connection opened
                 Client.Socket.socket.addEventListener('open', function (event) {
-                    Client.Socket.init();
+                    Client.getId();
+                    Client.Socket.sendMessage({
+                        route: 'ConnManager',
+                        resolve: 'getPeers',
+                    })
                 });
                 // Connection closed / retry every 1 sec
                 Client.Socket.socket.addEventListener('close', function (event) {
@@ -42,18 +56,9 @@ const Client = {
                 });
             }();
         },
-        init: () => {
-            Client.id = util.getCookie('id');
-            Client.Socket.sendMessage({
-                id: Client.id,
-                route: 'ConnManager',
-                resolve: 'getPeers',
-            })
-        },
         resolver: {
             // Look up current connections and determine if there is 
             evalConnectionPool: (data) => {
-                util.setCookie('id', data.id);
                 Client.Peers.peers[data.id] = {};
                 let newPeers = data.peers.filter((key) => !Client.Peers.peers[key])
                 console.log(newPeers)
@@ -64,10 +69,10 @@ const Client = {
         },
         handleMessage: async (data) => {
             console.log(data)
-            return await data.resolve && Client.Socket.resolver[data.resolve] ? Client.Socket.resolver[data.resolve](data) : console.log(data)
+            return Client.setId(data.id) && data.resolve && Client.Socket.resolver[data.resolve] ? await Client.Socket.resolver[data.resolve](data) : console.log(data)
         },
         sendMessage: (message) => {
-            Client.Socket.getSocket().send(JSON.stringify(message));
+            Client.Socket.getSocket().send(JSON.stringify({...message, id: Client.id}));
         },
     },
     WebRTC : {
