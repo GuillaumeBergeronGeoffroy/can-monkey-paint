@@ -35,6 +35,7 @@ const Client = {
                 Client.Socket.socket = new WebSocket('ws://localhost:8080');
                 // Connection opened
                 Client.Socket.socket.addEventListener('open', function (event) {
+                    Render.freeze(false)
                     Client.getId();
                     Client.Socket.sendMessage({
                         route: 'ConnManager',
@@ -44,6 +45,7 @@ const Client = {
                 // Connection closed / retry every 1 sec
                 Client.Socket.socket.addEventListener('close', function (event) {
                     console.log(event)
+                    Render.freeze()
                     Client.Socket.socket = null;
                     setTimeout(() => {
                         Client.Socket.getSocket();
@@ -63,6 +65,7 @@ const Client = {
                 let newPeers = data.peers.filter((key) => !Client.Peers.peers[key])
                 console.log(newPeers)
                 // Initiate peerConnection
+                Actions.initGameState();
             },
             receiveOffer: () => {},
             receiveAnswer: () => {}
