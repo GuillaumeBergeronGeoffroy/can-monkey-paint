@@ -9,21 +9,21 @@ export const ConnManager = {
     peers: {},
     blacklist: {},
     createPeer: (ws) => {
-        let newId = uuidv4();
-        ConnManager.peers[newId] = { ws:ws, ip:ws._socket.remoteAddress };
-        return newId;
+        let id = uuidv4();
+        ConnManager.peers[id] = { ws:ws, ip:ws._socket.remoteAddress, peers:  Object.keys(ConnManager.peers).sort(() => .5 - Math.random()).slice(0, 5), peersConn: {} };
+        return {id: id};
     },
     authPeer: (data) => {
         if(!ConnManager.blacklist[data.ws._socket.remoteAddress]) {
             if(!data.id || !(uuidValidate(data.id) && uuidVersion(data.id) === 4)) {
-                data.id = ConnManager.createPeer(data.ws);
+                data = { ...data, ...ConnManager.createPeer(data.ws) };
             } else if(!ConnManager.peers[data.id]) {
-                ConnManager.peers[data.id] = { ws:data.ws, ip:data.ws._socket.remoteAddress }
+                ConnManager.peers[data.id] = { ws:data.ws, ip:data.ws._socket.remoteAddress, peers: Object.keys(ConnManager.peers).sort(() => .5 - Math.random()).slice(0, 5), peersConn: {} };
             } else {
                 ConnManager.peers[data.id].ws = data.ws;
                 ConnManager.peers[data.id].ip = data.ws._socket.remoteAddress;
             }
-            return true;
+            return data;
         }
         return false;
     },
@@ -35,12 +35,77 @@ export const ConnManager = {
                 data: {
                     resolve: 'evalConnectionPool',
                     id: data.id,
-                    peers: Object.keys(ConnManager.peers)
                 }
             }
+        },
+        createOffer: (data) => {
+            let result = null;
+            ConnManager.peers[data.id] && ConnManager.peers[data.id].peers.map(key => {
+                console.log(ConnManager.peers[data.id].peersConn[key])
+                if(!ConnManager.peers[data.id].peersConn[key]) {
+                    let peer = ConnManager.peers[key];
+                    data.offer_id = uuidv4();
+                    ConnManager.peers[data.id].peersConn[key] = {offer_id: data.offer_id};
+                    ConnManager.peers[key].peersConn[data.id] = {offer_id: data.offer_id, connection_key: data.connection_key};
+                    result = {
+                        resolve: 'send',
+                        ws: peer.ws,
+                        data: {
+                            resolve: 'receiveOffer',
+                            id: key,
+                            offer: data.sessionDescription,
+                            offer_id: data.offer_id,
+                        }
+                    }
+                }
+            })
+            return result;
+        },
+        createAnswer: (data) => {
+            let result = null
+            Object.keys(ConnManager.peers[data.id].peersConn).map(key => {
+                let peerData = ConnManager.peers[data.id].peersConn[key];
+                if(peerData.offer_id && peerData.offer_id == data.offer_id) {
+                    ConnManager.peers[key].peersConn[data.id].connection_key = data.connection_key;
+                    let peer = ConnManager.peers[key];
+                    result = {
+                        resolve: 'send',
+                        ws: peer.ws,
+                        data: {
+                            resolve: 'receiveAnswer',
+                            id: key,
+                            answer: data.sessionDescription,
+                            connection_key: peerData.connection_key,
+                            offer_id: data.offer_id,
+                        }
+                    }
+                }
+            });
+            return result;
+        },
+        sendIce: (data) => {
+            let result = null;
+            Object.keys(ConnManager.peers[data.id].peersConn).map(key => {
+                let peerData = ConnManager.peers[data.id].peersConn[key];
+                if(peerData.offer_id && peerData.offer_id == data.offer_id) {
+                    let peer = ConnManager.peers[key];
+                    result = {
+                        resolve: 'send',
+                        ws: peer.ws,
+                        data: {
+                            resolve: 'receiveIce',
+                            id: key,
+                            connection_key: ConnManager.peers[data.id].peersConn[key].connection_key,
+                            iceCandidate: data.iceCandidate
+                        }
+                    }
+                }
+            });
+            return result;
         }
     },
     handleMessage: (data) => {
-        return ConnManager.authPeer(data) && data.resolve && ConnManager.resolver[data.resolve] ? ConnManager.resolver[data.resolve](data) : null
+        data = ConnManager.authPeer(data)
+        return data && data.resolve ? ConnManager.resolver[data.resolve](data) : null;
     }
 }

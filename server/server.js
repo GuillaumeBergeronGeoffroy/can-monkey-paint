@@ -24,9 +24,9 @@ const Server = {
             port: 8080,
         });
         Server.server.on('connection', (ws) => {
-            ws.on('message',  async (data) => {
+            ws.on('message', (data) => {
                 data = {...JSON.parse(data), ws:ws };
-                let result = data.route ? await Server.routes[data.route].handleMessage(data) : null
+                let result = Server.routes[data.route].handleMessage(data)
                 result && result.resolve && Server.resolver[result.resolve] ? Server.resolver[result.resolve](JSON.stringify(result.data), result.ws) : null
             });
         });
