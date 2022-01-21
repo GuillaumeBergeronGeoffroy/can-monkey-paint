@@ -138,13 +138,13 @@ const Client = {
             Client.WebRTC.registerConnectionEvents(connectionObject.peerConnection);
             connectionObject.sendChannel = connectionObject.peerConnection.createDataChannel("sendChannel");
             Client.WebRTC.registerChannelEvent(connectionObject.sendChannel)
-            let sessionDescription = await connectionObject.peerConnection.createOffer();
-            connectionObject.peerConnection.setLocalDescription(sessionDescription);
+            let offer = await connectionObject.peerConnection.createOffer();
+            connectionObject.peerConnection.setLocalDescription(offer);
             Client.Peers.peers.push(connectionObject);
             Client.Socket.sendMessage({
                 route: 'ConnManager',
                 resolve: 'createOffer',
-                sessionDescription: sessionDescription,
+                offer: offer,
                 connection_key: Client.Peers.peers.length - 1
             });
         },
@@ -157,8 +157,8 @@ const Client = {
             };
             Client.WebRTC.registerConnectionEvents(connectionObject.peerConnection);
             connectionObject.peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer)).then(async () => {
-                let sessionDescription = await connectionObject.peerConnection.createAnswer();
-                connectionObject.peerConnection.setLocalDescription(sessionDescription)
+                let answer = await connectionObject.peerConnection.createAnswer();
+                connectionObject.peerConnection.setLocalDescription(answer)
                 connectionObject.peerConnection.ondatachannel = (event) => {
                     connectionObject.sendChannel = event.channel;
                     Client.WebRTC.registerChannelEvent(connectionObject.sendChannel)
@@ -168,7 +168,7 @@ const Client = {
                 Client.Socket.sendMessage({
                     route: 'ConnManager',
                     resolve: 'createAnswer',
-                    sessionDescription: sessionDescription,
+                    answer: answer,
                     offer_id: data.offer_id,
                     connection_key: Client.Peers.peers.length - 1,
                 });

@@ -60,7 +60,7 @@ export const ConnManager = {
                         data: {
                             resolve: 'receiveOffer',
                             id: key,
-                            offer: data.sessionDescription,
+                            offer: data.offer,
                             offer_id: data.offer_id,
                         }
                     }
@@ -81,7 +81,7 @@ export const ConnManager = {
                         data: {
                             resolve: 'receiveAnswer',
                             id: key,
-                            answer: data.sessionDescription,
+                            answer: data.answer,
                             connection_key: peerData.connection_key,
                             offer_id: data.offer_id,
                         }
