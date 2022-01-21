@@ -69,6 +69,9 @@ const Client = {
             receiveOffer: (data) =>  {
                 Client.WebRTC.createAnswer(data);
             },
+            cancelOffer: (data) => {
+                Client.Peers.peers[data.connection_key] = null;
+            },
             receiveAnswer: (data) => {
                 Client.WebRTC.receiveAnswer(data);
             },
@@ -132,10 +135,9 @@ const Client = {
                 iceCandidates: [],
                 iceReady: false
             };
-            connectionObject.oniceconnectionstatechange = (e) => console.log(e)
+            Client.WebRTC.registerConnectionEvents(connectionObject.peerConnection);
             connectionObject.sendChannel = connectionObject.peerConnection.createDataChannel("sendChannel");
-            connectionObject.sendChannel.onopen = () => console.log('open');
-            connectionObject.sendChannel.onclose = () => console.log('open');
+            Client.WebRTC.registerChannelEvent(connectionObject.sendChannel)
             let sessionDescription = await connectionObject.peerConnection.createOffer();
             connectionObject.peerConnection.setLocalDescription(sessionDescription);
             Client.Peers.peers.push(connectionObject);
@@ -153,15 +155,13 @@ const Client = {
                 iceCandidates: [],
                 iceReady: false
             };
-            connectionObject.oniceconnectionstatechange = (e) => console.log(e)
+            Client.WebRTC.registerConnectionEvents(connectionObject.peerConnection);
             connectionObject.peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer)).then(async () => {
                 let sessionDescription = await connectionObject.peerConnection.createAnswer();
                 connectionObject.peerConnection.setLocalDescription(sessionDescription)
                 connectionObject.peerConnection.ondatachannel = (event) => {
                     connectionObject.sendChannel = event.channel;
-                    connectionObject.sendChannel.onmessage = (data) => console.log(data);
-                    connectionObject.sendChannel.onopen = () => console.log('open');
-                    connectionObject.sendChannel.onclose = () => console.log('open');
+                    Client.WebRTC.registerChannelEvent(connectionObject.sendChannel)
                 };
                 Client.Peers.peers.push(connectionObject);
                 connectionObject.peerConnection.onicecandidate = e => Client.WebRTC.sendIce({iceCandidate: e.candidate, connection_key: Client.Peers.peers.length - 1, offer_id: data.offer_id})
@@ -176,6 +176,19 @@ const Client = {
                 Client.WebRTC.drainRemoteIceCandidates(connectionObject)
             });
         },
+        registerConnectionEvents: (peerConnection) => {
+            peerConnection.onconnectionstatechange = (e) => console.log(e)
+            peerConnection.onsignalingstatechange = (e) => console.log(e)
+            peerConnection.onicegatheringstatechange = (e) => console.log(e)
+            peerConnection.onicecandidateerror = (e) => console.log(e)
+            peerConnection.onaddstream = (e) => console.log(e)
+            peerConnection.onnegotiationneeded = (e) => console.log(e)
+        },
+        registerChannelEvent: (sendChannel) => {
+            sendChannel.onmessage = () => console.log('message');
+            sendChannel.onopen = () => console.log('open');
+            sendChannel.onclose = () => console.log('close');
+        },
         receiveAnswer: (data) => {
             Client.Peers.peers[data.connection_key].peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer))
             Client.Peers.peers[data.connection_key].peerConnection.onicecandidate = e =>  Client.WebRTC.sendIce({iceCandidate: e.candidate, connection_key: Client.Peers.peers.length - 1, offer_id: data.offer_id})
@@ -187,6 +200,7 @@ const Client = {
             Client.WebRTC.drainRemoteIceCandidates(Client.Peers.peers[data.connection_key])
         },
         sendIce: (data) => {
+            console.log(data)
             if(!data.iceCandidate) return
             Client.Socket.sendMessage({
                 route: 'ConnManager',

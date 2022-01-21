@@ -39,9 +39,16 @@ export const ConnManager = {
             }
         },
         createOffer: (data) => {
-            let result = null;
-            ConnManager.peers[data.id] && ConnManager.peers[data.id].peers.map(key => {
-                console.log(ConnManager.peers[data.id].peersConn[key])
+            let result = {
+                resolve: 'send',
+                ws: data.ws,
+                data: {
+                    resolve: 'cancelOffer',
+                    id: data.id,
+                    connection_key: data.connection_key,
+                }
+            }
+            ConnManager.peers[data.id].peers.map(key => {
                 if(!ConnManager.peers[data.id].peersConn[key]) {
                     let peer = ConnManager.peers[key];
                     data.offer_id = uuidv4();
@@ -58,7 +65,7 @@ export const ConnManager = {
                         }
                     }
                 }
-            })
+            }) 
             return result;
         },
         createAnswer: (data) => {
