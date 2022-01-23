@@ -5,7 +5,7 @@
   "description": "Express server project using compression",
   "main": "src/index.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "set PORT=3000 && node server.js"
   },
   "dependencies": {
     "uuid": "^8.3.2",
