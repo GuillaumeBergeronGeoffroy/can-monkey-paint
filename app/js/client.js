@@ -136,10 +136,11 @@ const Client = {
                 ownCandidates: [],
                 iceReady: false
             };
-            Client.WebRTC.registerConnectionEvents(connection);
+            Client.WebRTC.registerConnectionEvents(connection.peerConnection);
             return connection;
         },
-        createOffer: async (connection) => {
+        createOffer: async () => {
+            let connection = Client.WebRTC.createConnection();
             connection.sendChannel = connection.peerConnection.createDataChannel("sendChannel");
             Client.WebRTC.registerChannelEvent(connection.sendChannel)
             let offer = await connection.peerConnection.createOffer();
@@ -174,14 +175,14 @@ const Client = {
                 Client.WebRTC.drainRemoteIceCandidates(connection)
             });
         },
-        registerConnectionEvents: (connection) => {
+        registerConnectionEvents: (peerConnection) => {
             // peerConnection.onicecandidate = (e) => console.log(e.iceCandidate) && e.iceCandidate && peerConnection.ownCandidates.push(e.iceCandidate)
-            connection.peerConnection.onconnectionstatechange = (e) => console.log(e)
-            connection.peerConnection.onsignalingstatechange = (e) => console.log(e)
-            connection.peerConnection.onicegatheringstatechange = (e) => console.log(e)
-            connection.peerConnection.onicecandidateerror = (e) => console.log(e)
-            connection.peerConnection.onaddstream = (e) => console.log(e)
-            connection.peerConnection.onnegotiationneeded = (e) => Client.WebRTC.createOffer(connection);
+            peerConnection.onconnectionstatechange = (e) => console.log(e)
+            peerConnection.onsignalingstatechange = (e) => console.log(e)
+            peerConnection.onicegatheringstatechange = (e) => console.log(e)
+            peerConnection.onicecandidateerror = (e) => console.log(e)
+            peerConnection.onaddstream = (e) => console.log(e)
+            peerConnection.onnegotiationneeded = (e) => console.log(e)
         },
         registerChannelEvent: (sendChannel) => {
             sendChannel.onerror = (error) => console.log(error);
