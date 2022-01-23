@@ -98,6 +98,7 @@ const Client = {
                 peerConnection: new RTCPeerConnection(Client.WebRTC.iceConfig.iceServers),
                 sendChannel: null,
                 iceCandidates: [],
+                ownCandidate: [],
                 iceReady: false
             };
             Client.WebRTC.registerConnectionEvents(connection.peerConnection);
@@ -108,6 +109,7 @@ const Client = {
             connection.sendChannel = connection.peerConnection.createDataChannel("sendChannel");
             Client.WebRTC.registerChannelEvent(connection.sendChannel)
             let offer = await connection.peerConnection.createOffer();
+            connection.peerConnection.onicecandidate = (e) => e.candidate && connection.ownCandidate.push(e.candidate)
             connection.peerConnection.setLocalDescription(offer);
             Client.Peers.peers.push(connection);
             Client.Socket.sendMessage({
@@ -155,7 +157,7 @@ const Client = {
         },
         receiveAnswer: (data) => {
             Client.Peers.peers[data.connection_key].peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer))
-            Client.Peers.peers[data.connection_key].peerConnection.onicecandidate = e => Client.WebRTC.sendIce({ iceCandidate: e.candidate, connection_key: Client.Peers.peers.length - 1, offer_id: data.offer_id })
+            Client.Peers.peers[data.connection_key].ownCandidate.map(e => Client.WebRTC.sendIce({ iceCandidate: e, connection_key: Client.Peers.peers.length - 1, offer_id: data.offer_id }))
             Client.Peers.peers[data.connection_key].iceReady = true;
             Client.WebRTC.drainRemoteIceCandidates(Client.Peers.peers[data.connection_key])
         },
