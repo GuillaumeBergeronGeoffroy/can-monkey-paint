@@ -17,7 +17,6 @@ export const ConnManager = {
         if(!ConnManager.blacklist[data.ws._socket.remoteAddress]) {
             if(!data.id || !(uuidValidate(data.id) && uuidVersion(data.id) === 4)) {
                 data = { ...data, ...ConnManager.createPeer(data.ws) };
-                console.log(data.id)
             } else if(!ConnManager.peers[data.id]) {
                 ConnManager.peers[data.id] = { ws:data.ws, ip:data.ws._socket.remoteAddress, peers: Object.keys(ConnManager.peers).sort(() => .5 - Math.random()).slice(0, 5), peersConn: {} };
             } else {

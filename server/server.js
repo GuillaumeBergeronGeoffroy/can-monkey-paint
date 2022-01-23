@@ -25,7 +25,6 @@ const Server = {
         });
         Server.server.on('connection', (ws) => {
             ws.on('message', (data) => {
-                console.log(data)
                 data = {...JSON.parse(data), ws:ws };
                 let result = Server.routes[data.route].handleMessage(data)
                 result && result.resolve && Server.resolver[result.resolve] ? Server.resolver[result.resolve](JSON.stringify(result.data), result.ws) : null
