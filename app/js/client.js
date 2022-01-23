@@ -32,7 +32,7 @@ const Client = {
         // Initiale/Return WebSocket connection.
         getSocket: function() { 
             return Client.Socket.socket ? Client.Socket.socket : function() {
-                Client.Socket.socket = new WebSocket('ws://localhost:8080');
+                Client.Socket.socket = new WebSocket('wss://signal.canmonkeypaint.com');
                 // Connection opened
                 Client.Socket.socket.addEventListener('open', function (event) {
                     // Render.freeze(false)
@@ -185,7 +185,8 @@ const Client = {
             peerConnection.onnegotiationneeded = (e) => console.log(e)
         },
         registerChannelEvent: (sendChannel) => {
-            sendChannel.onmessage = () => console.log('message');
+            sendChannel.onerror = (error) => console.log(error);
+            sendChannel.onmessage = (e) => console.log(e);
             sendChannel.onopen = () => console.log('open');
             sendChannel.onclose = () => console.log('close');
         },
