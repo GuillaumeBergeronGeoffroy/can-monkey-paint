@@ -5,7 +5,7 @@ const Client = {
         Client.id = util.getCookie('id');
     },
     setId: (id) => {
-        if(id && Client.id != id) {
+        if (id && Client.id != id) {
             util.setCookie('id', id);
             Client.getId()
         }
@@ -18,7 +18,7 @@ const Client = {
         process: true,
         messageQueue: [],
         pull: async () => {
-            if(Client.MessageQueue.process && Client.MessageQueue.messageQueue.length) {
+            if (Client.MessageQueue.process && Client.MessageQueue.messageQueue.length) {
                 Client.MessageQueue.process = false;
                 var message = Client.MessageQueue.messageQueue.shift();
                 var result = await Client[message.type].handleMessage(message.data);
@@ -30,8 +30,8 @@ const Client = {
     Socket: {
         socket: null,
         // Initiale/Return WebSocket connection.
-        getSocket: function() { 
-            return Client.Socket.socket ? Client.Socket.socket : function() {
+        getSocket: function () {
+            return Client.Socket.socket ? Client.Socket.socket : function () {
                 Client.Socket.socket = new WebSocket('wss://signal.canmonkeypaint.com');
                 // Connection opened
                 Client.Socket.socket.addEventListener('open', function (event) {
@@ -53,7 +53,7 @@ const Client = {
                 });
                 // Listen for messages
                 Client.Socket.socket.addEventListener('message', function (event) {
-                    Client.MessageQueue.messageQueue.push({type:'Socket', data: JSON.parse(event.data)});
+                    Client.MessageQueue.messageQueue.push({ type: 'Socket', data: JSON.parse(event.data) });
                     Client.MessageQueue.pull();
                 });
             }();
@@ -62,11 +62,11 @@ const Client = {
             // Look up current connections and determine if there is 
             evalConnectionPool: async (data) => {
                 // If less then 5 peers offer 
-                if(Client.Peers.peers.length < 5) {
+                if (Client.Peers.peers.length < 5) {
                     Client.WebRTC.createOffer();
-                }             
+                }
             },
-            receiveOffer: (data) =>  {
+            receiveOffer: (data) => {
                 Client.WebRTC.createAnswer(data);
             },
             cancelOffer: (data) => {
@@ -78,39 +78,39 @@ const Client = {
             receiveIce: (data) => {
                 Client.WebRTC.receiveIce(data);
             }
-            
+
         },
         handleMessage: async (data) => {
             console.log(data)
             return Client.setId(data.id) && data.resolve && Client.Socket.resolver[data.resolve] ? await Client.Socket.resolver[data.resolve](data) : console.log(data)
         },
         sendMessage: (message) => {
-            Client.Socket.getSocket().send(JSON.stringify({...message, id: Client.id}));
+            Client.Socket.getSocket().send(JSON.stringify({ ...message, id: Client.id }));
         },
     },
-    WebRTC : {
+    WebRTC: {
         // STUN server config for Internet Connectivity Establishment without TURN for now
         iceConfig: {
             iceServers: [
-                {url:'stun:stun01.sipphone.com'},
-                {url:'stun:stun.ekiga.net'},
-                {url:'stun:stun.fwdnet.net'},
-                {url:'stun:stun.ideasip.com'},
-                {url:'stun:stun.iptel.org'},
-                {url:'stun:stun.rixtelecom.se'},
-                {url:'stun:stun.schlund.de'},
-                {url:'stun:stun.l.google.com:19302'},
-                {url:'stun:stun1.l.google.com:19302'},
-                {url:'stun:stun2.l.google.com:19302'},
-                {url:'stun:stun3.l.google.com:19302'},
-                {url:'stun:stun4.l.google.com:19302'},
-                {url:'stun:stunserver.org'},
-                {url:'stun:stun.softjoys.com'},
-                {url:'stun:stun.voiparound.com'},
-                {url:'stun:stun.voipbuster.com'},
-                {url:'stun:stun.voipstunt.com'},
-                {url:'stun:stun.voxgratia.org'},
-                {url:'stun:stun.xten.com'},
+                { url: 'stun:stun01.sipphone.com' },
+                { url: 'stun:stun.ekiga.net' },
+                { url: 'stun:stun.fwdnet.net' },
+                { url: 'stun:stun.ideasip.com' },
+                { url: 'stun:stun.iptel.org' },
+                { url: 'stun:stun.rixtelecom.se' },
+                { url: 'stun:stun.schlund.de' },
+                { url: 'stun:stun.l.google.com:19302' },
+                { url: 'stun:stun1.l.google.com:19302' },
+                { url: 'stun:stun2.l.google.com:19302' },
+                { url: 'stun:stun3.l.google.com:19302' },
+                { url: 'stun:stun4.l.google.com:19302' },
+                { url: 'stun:stunserver.org' },
+                { url: 'stun:stun.softjoys.com' },
+                { url: 'stun:stun.voiparound.com' },
+                { url: 'stun:stun.voipbuster.com' },
+                { url: 'stun:stun.voipstunt.com' },
+                { url: 'stun:stun.voxgratia.org' },
+                { url: 'stun:stun.xten.com' },
                 {
                     url: 'turn:numb.viagenie.ca',
                     credential: 'muazkh',
@@ -128,19 +128,23 @@ const Client = {
                 }
             ]
         },
-        createOffer: async () => {
-            let connectionObject = {
+        createConnection: () => {
+            let connection = {
                 peerConnection: new RTCPeerConnection(Client.WebRTC.iceConfig.iceServers),
                 sendChannel: null,
                 iceCandidates: [],
+                ownCandidates: [],
                 iceReady: false
             };
-            Client.WebRTC.registerConnectionEvents(connectionObject.peerConnection);
-            connectionObject.sendChannel = connectionObject.peerConnection.createDataChannel("sendChannel");
-            Client.WebRTC.registerChannelEvent(connectionObject.sendChannel)
-            let offer = await connectionObject.peerConnection.createOffer();
-            connectionObject.peerConnection.setLocalDescription(offer);
-            Client.Peers.peers.push(connectionObject);
+            Client.WebRTC.registerConnectionEvents(connection);
+            return connection;
+        },
+        createOffer: async (connection) => {
+            connection.sendChannel = connection.peerConnection.createDataChannel("sendChannel");
+            Client.WebRTC.registerChannelEvent(connection.sendChannel)
+            let offer = await connection.peerConnection.createOffer();
+            connection.peerConnection.setLocalDescription(offer);
+            Client.Peers.peers.push(connection);
             Client.Socket.sendMessage({
                 route: 'ConnManager',
                 resolve: 'createOffer',
@@ -149,22 +153,16 @@ const Client = {
             });
         },
         createAnswer: (data) => {
-            let connectionObject = {
-                peerConnection: new RTCPeerConnection(Client.WebRTC.iceConfig.iceServers),
-                sendChannel: null,
-                iceCandidates: [],
-                iceReady: false
-            };
-            Client.WebRTC.registerConnectionEvents(connectionObject.peerConnection);
-            connectionObject.peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer)).then(async () => {
-                let answer = await connectionObject.peerConnection.createAnswer();
-                connectionObject.peerConnection.setLocalDescription(answer)
-                connectionObject.peerConnection.ondatachannel = (event) => {
-                    connectionObject.sendChannel = event.channel;
-                    Client.WebRTC.registerChannelEvent(connectionObject.sendChannel)
+            let connection = Client.WebRTC.createConnection();
+            connection.peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer)).then(async () => {
+                let answer = await connection.peerConnection.createAnswer();
+                connection.peerConnection.setLocalDescription(answer)
+                connection.peerConnection.onicecandidate = e => Client.WebRTC.sendIce({ iceCandidate: e.candidate, connection_key: Client.Peers.peers.length - 1, offer_id: data.offer_id });
+                connection.peerConnection.ondatachannel = (event) => {
+                    connection.sendChannel = event.channel;
+                    Client.WebRTC.registerChannelEvent(connection.sendChannel)
                 };
-                Client.Peers.peers.push(connectionObject);
-                connectionObject.peerConnection.onicecandidate = e => Client.WebRTC.sendIce({iceCandidate: e.candidate, connection_key: Client.Peers.peers.length - 1, offer_id: data.offer_id})
+                Client.Peers.peers.push(connection);
                 Client.Socket.sendMessage({
                     route: 'ConnManager',
                     resolve: 'createAnswer',
@@ -172,17 +170,18 @@ const Client = {
                     offer_id: data.offer_id,
                     connection_key: Client.Peers.peers.length - 1,
                 });
-                connectionObject.iceReady = true;
-                Client.WebRTC.drainRemoteIceCandidates(connectionObject)
+                connection.iceReady = true;
+                Client.WebRTC.drainRemoteIceCandidates(connection)
             });
         },
-        registerConnectionEvents: (peerConnection) => {
-            peerConnection.onconnectionstatechange = (e) => console.log(e)
-            peerConnection.onsignalingstatechange = (e) => console.log(e)
-            peerConnection.onicegatheringstatechange = (e) => console.log(e)
-            peerConnection.onicecandidateerror = (e) => console.log(e)
-            peerConnection.onaddstream = (e) => console.log(e)
-            peerConnection.onnegotiationneeded = (e) => console.log(e)
+        registerConnectionEvents: (connection) => {
+            // peerConnection.onicecandidate = (e) => console.log(e.iceCandidate) && e.iceCandidate && peerConnection.ownCandidates.push(e.iceCandidate)
+            connection.peerConnection.onconnectionstatechange = (e) => console.log(e)
+            connection.peerConnection.onsignalingstatechange = (e) => console.log(e)
+            connection.peerConnection.onicegatheringstatechange = (e) => console.log(e)
+            connection.peerConnection.onicecandidateerror = (e) => console.log(e)
+            connection.peerConnection.onaddstream = (e) => console.log(e)
+            connection.peerConnection.onnegotiationneeded = (e) => Client.WebRTC.createOffer(connection);
         },
         registerChannelEvent: (sendChannel) => {
             sendChannel.onerror = (error) => console.log(error);
@@ -192,7 +191,7 @@ const Client = {
         },
         receiveAnswer: (data) => {
             Client.Peers.peers[data.connection_key].peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer))
-            Client.Peers.peers[data.connection_key].peerConnection.onicecandidate = e =>  Client.WebRTC.sendIce({iceCandidate: e.candidate, connection_key: Client.Peers.peers.length - 1, offer_id: data.offer_id})
+            Client.Peers.peers[data.connection_key].peerConnection.onicecandidate = e => Client.WebRTC.sendIce({ iceCandidate: e.candidate, connection_key: Client.Peers.peers.length - 1, offer_id: data.offer_id })
             Client.Peers.peers[data.connection_key].iceReady = true;
             Client.WebRTC.drainRemoteIceCandidates(Client.Peers.peers[data.connection_key])
         },
@@ -202,24 +201,24 @@ const Client = {
         },
         sendIce: (data) => {
             console.log(data)
-            if(!data.iceCandidate) return
+            if (!data.iceCandidate) return
             Client.Socket.sendMessage({
                 route: 'ConnManager',
                 resolve: 'sendIce',
                 ...data
             });
         },
-        drainRemoteIceCandidates: (connectionObject) => {
-            if(connectionObject.iceReady) {
-                let size = connectionObject.iceCandidates.length
-                connectionObject.iceCandidates.forEach(async (iceCandidate) => {
+        drainRemoteIceCandidates: (connection) => {
+            if (connection.iceReady) {
+                let size = connection.iceCandidates.length
+                connection.iceCandidates.forEach(async (iceCandidate) => {
                     try {
-                        await connectionObject.peerConnection.addIceCandidate(new RTCIceCandidate(iceCandidate))
+                        await connection.peerConnection.addIceCandidate(new RTCIceCandidate(iceCandidate))
                     } catch (e) {
                         console.log("Failed to add remote ICE candidate", e)
                     }
                 })
-                connectionObject.iceCandidates = []
+                connection.iceCandidates = []
                 console.log(`${size} received remote ICE candidates added to local peer`)
             }
         }
