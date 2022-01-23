@@ -133,7 +133,6 @@ const Client = {
                 peerConnection: new RTCPeerConnection(Client.WebRTC.iceConfig.iceServers),
                 sendChannel: null,
                 iceCandidates: [],
-                ownCandidates: [],
                 iceReady: false
             };
             Client.WebRTC.registerConnectionEvents(connection.peerConnection);
@@ -176,7 +175,11 @@ const Client = {
             });
         },
         registerConnectionEvents: (peerConnection) => {
-            // peerConnection.onicecandidate = (e) => console.log(e.iceCandidate) && e.iceCandidate && peerConnection.ownCandidates.push(e.iceCandidate)
+            peerConnection.addEventListener('icecandidate', event => {
+                if (event.candidate) {
+                    console.log('candidate')
+                }
+            });
             peerConnection.onconnectionstatechange = (e) => console.log(e)
             peerConnection.onsignalingstatechange = (e) => console.log(e)
             peerConnection.onicegatheringstatechange = (e) => console.log(e)
