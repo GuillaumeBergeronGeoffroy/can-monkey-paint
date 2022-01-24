@@ -157,7 +157,7 @@ const Client = {
         },
         receiveAnswer: (data) => {
             Client.Peers.peers[data.connection_key].peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer))
-            Client.Peers.peers[data.connection_key].ownCandidate.map(e => Client.WebRTC.sendIce({ iceCandidate: e, connection_key: Client.Peers.peers.length - 1, offer_id: data.offer_id }))
+            Client.Peers.peers[data.connection_key].ownCandidate.map(candidate => Client.WebRTC.sendIce({ iceCandidate: candidate, connection_key: Client.Peers.peers.length - 1, offer_id: data.offer_id }))
             Client.Peers.peers[data.connection_key].iceReady = true;
             Client.WebRTC.drainRemoteIceCandidates(Client.Peers.peers[data.connection_key])
         },
