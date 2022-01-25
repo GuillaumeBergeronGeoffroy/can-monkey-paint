@@ -198,7 +198,6 @@ const Client = {
         resolver: {
             // Look up current connections and determine if there is 
             addPixel: (data) => {
-                data = JSON.parse(data);
                 Actions.addPixel(data.pixel, data.id);
             },
         },
