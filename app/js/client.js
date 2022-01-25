@@ -204,7 +204,7 @@ const Client = {
         },
         handleMessage: async (data) => {
             console.log(data)
-            return data.resolve && Client.WebRTC.resolver[data.resolve] ? await Client.Socket.resolver[data.resolve](data) : console.log(data)
+            return data.resolve && Client.WebRTC.resolver[data.resolve] ? await Client.WebRTC.resolver[data.resolve](data) : console.log(data)
         },
         sendMessage: (data) => {
             try {
