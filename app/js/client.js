@@ -207,7 +207,6 @@ const Client = {
         },
         sendMessage: (data) => {
             try {
-                console.log(data)
                 Client.Peers.peers.map((peer) => peer && peer.sendChannel && peer.sendChannel.send(JSON.stringify(data)));
             } catch (e) { }
         },

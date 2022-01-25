@@ -41,7 +41,7 @@ const Render = {
             }
         Render.refs.dark_icon.onclick = Render.toggleDarkmode;
         Render.refs.canvas.onclick = (e) => {
-            e.isTrusted && Actions.handleAddPixelEvent({ x: e.offsetX, y: e.offsetY, color: Render.refs.picker_sample.style.color })
+            e.isTrusted && Actions.addPixel({ x: e.offsetX, y: e.offsetY, color: Render.refs.picker_sample.style.color })
         }
     },
     toggleDarkmode: () => {

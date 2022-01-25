@@ -5,16 +5,13 @@ const Actions = {
             Game.state = 1;
         }
     },
-    handleAddPixelEvent: (pixel) => {
-        Client.WebRTC.sendMessage({
-            resolve: 'addPixel',
-            pixel: pixel,
-            id: Client.publicId
-        });
-        Actions.addPixel(pixel);
-    },
     addPixel: (pixel, id = Client.publicId) => {
         if (!Game.board[pixel.x + 'x' + pixel.y]) {
+            Client.WebRTC.sendMessage({
+                resolve: 'addPixel',
+                pixel: pixel,
+                id: id
+            });
             Game.board[pixel.x + 'x' + pixel.y] = { color: pixel.color, id: id }
             Render.drawPixel(pixel)
         }
