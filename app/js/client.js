@@ -1,8 +1,10 @@
 // I/o channel <-> Actions
 const Client = {
     id: null,
-    getId: () => {
+    publicId: null,
+    getId: async () => {
         Client.id = util.getCookie('id');
+        Client.publicId = await util.sha256(Client.id);
     },
     setId: (id) => {
         if (id && Client.id != id) {
@@ -24,45 +26,46 @@ const Client = {
                 var result = await Client[message.type].handleMessage(message.data);
                 Client.MessageQueue.process = true;
                 Client.MessageQueue.pull();
+            } else {
+                console.log(Client.MessageQueue.process, Client.MessageQueue.messageQueue)
             }
         },
     },
     Socket: {
         socket: null,
         // Initiale/Return WebSocket connection.
-        getSocket: function () {
+        getSocket: () => {
             return Client.Socket.socket ? Client.Socket.socket : function () {
                 Client.Socket.socket = new WebSocket('wss://signal.canmonkeypaint.com');
                 // Connection opened
-                Client.Socket.socket.addEventListener('open', function (event) {
+                Client.Socket.socket.onopen = (e) => {
                     // Render.freeze(false)
                     Client.getId();
                     Client.Socket.sendMessage({
                         route: 'ConnManager',
                         resolve: 'getPeers',
                     })
-                });
+                };
                 // Connection closed / retry every 1 sec
-                Client.Socket.socket.addEventListener('close', function (event) {
-                    console.log(event)
+                Client.Socket.socket.onclose = (e) => {
+                    console.log(e)
                     // Render.freeze()
                     Client.Socket.socket = null;
                     setTimeout(() => {
                         Client.Socket.getSocket();
                     }, 1000)
-                });
+                };
                 // Listen for messages
-                Client.Socket.socket.addEventListener('message', function (event) {
-                    Client.MessageQueue.messageQueue.push({ type: 'Socket', data: JSON.parse(event.data) });
+                Client.Socket.socket.onmessage = (e) => {
+                    Client.MessageQueue.messageQueue.push({ type: 'Socket', data: JSON.parse(e.data) });
                     Client.MessageQueue.pull();
-                });
+                };
             }();
         },
         resolver: {
             // Look up current connections and determine if there is 
             evalConnectionPool: async (data) => {
-                // If less then 5 peers offer 
-                if (Client.Peers.peers.length < 5) {
+                if (!Client.Peers.peers.length) {
                     Client.WebRTC.createOffer();
                 }
             },
@@ -151,8 +154,14 @@ const Client = {
         },
         registerChannelEvent: (sendChannel) => {
             sendChannel.onerror = (error) => console.log(error);
-            sendChannel.onmessage = (e) => console.log(e);
+            // Add to MessageQueue
+            sendChannel.onmessage = (e) => {
+                Client.MessageQueue.messageQueue.push({ type: 'WebRTC', data: JSON.parse(e.data) });
+                Client.MessageQueue.pull();
+            };
+            // Merge board data
             sendChannel.onopen = () => console.log('open');
+            // Delete peer -> Trigger offer get new connection
             sendChannel.onclose = () => console.log('close');
         },
         receiveAnswer: (data) => {
@@ -187,7 +196,23 @@ const Client = {
                 connection.iceCandidates = []
                 console.log(`${size} received remote ICE candidates added to local peer`)
             }
-        }
+        },
+        resolver: {
+            // Look up current connections and determine if there is 
+            addPixel: (data) => {
+                data = JSON.parse(data);
+                Actions.addPixel(data.pixel, data.id);
+            },
+        },
+        handleMessage: async (data) => {
+            console.log(data)
+            return data.resolve && Client.WebRTC.resolver[data.resolve] ? await Client.Socket.resolver[data.resolve](data) : console.log(data)
+        },
+        sendMessage: (data) => {
+            try {
+                Client.Peers.peers.map((peer) => peer && peer.sendChannel && peer.sendChannel.send(JSON.stringify(data)));
+            } catch (e) { }
+        },
     },
 }
 Client.Socket.getSocket();

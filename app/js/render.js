@@ -22,7 +22,7 @@ const Render = {
         Render.context = Render.refs.canvas.getContext('2d');
     },
     initSettings: () => {
-        if(util.getCookie('darkmode') == 'false') {
+        if (util.getCookie('darkmode') == 'false') {
             Render.refs.body.classList.remove('darkmode');
         }
     },
@@ -33,19 +33,19 @@ const Render = {
             Render.refs.info_icon.style.display = 'none';
             Render.refs.back_icon.style.display = 'block';
         },
-        Render.refs.back_icon.onclick = () => {
-            Render.refs.game_container.style.display = 'block';
-            Render.refs.info_container.style.display = 'none';
-            Render.refs.info_icon.style.display = 'block';
-            Render.refs.back_icon.style.display = 'none';
-        }
+            Render.refs.back_icon.onclick = () => {
+                Render.refs.game_container.style.display = 'block';
+                Render.refs.info_container.style.display = 'none';
+                Render.refs.info_icon.style.display = 'block';
+                Render.refs.back_icon.style.display = 'none';
+            }
         Render.refs.dark_icon.onclick = Render.toggleDarkmode;
         Render.refs.canvas.onclick = (e) => {
-            e.isTrusted && Actions.addPixel({x: e.offsetX, y: e.offsetY, color: Render.refs.picker_sample.style.color})
+            e.isTrusted && Actions.handleAddPixelEvent({ x: e.offsetX, y: e.offsetY, color: Render.refs.picker_sample.style.color })
         }
     },
     toggleDarkmode: () => {
-        if(util.getCookie('darkmode') == 'true') {
+        if (util.getCookie('darkmode') == 'true') {
             Render.refs.body.classList.remove('darkmode');
             util.setCookie('darkmode', false)
         } else {
@@ -54,7 +54,7 @@ const Render = {
         }
     },
     freeze: (freeze = true) => {
-        if(freeze) {
+        if (freeze) {
             Render.refs.body.style.pointerEvents = 'none';
         } else {
             Render.refs.body.style.pointerEvents = 'auto';
