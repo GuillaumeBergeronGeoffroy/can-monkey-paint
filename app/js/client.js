@@ -26,8 +26,6 @@ const Client = {
                 var result = await Client[message.type].handleMessage(message.data);
                 Client.MessageQueue.process = true;
                 Client.MessageQueue.pull();
-            } else {
-                console.log(Client.MessageQueue.process, Client.MessageQueue.messageQueue)
             }
         },
     },
@@ -65,7 +63,7 @@ const Client = {
         resolver: {
             // Look up current connections and determine if there is 
             evalConnectionPool: async (data) => {
-                if (!Client.Peers.peers.length) {
+                if (Client.Peers.peers.length < 5) {
                     Client.WebRTC.createOffer();
                 }
             },
@@ -210,6 +208,7 @@ const Client = {
         },
         sendMessage: (data) => {
             try {
+                console.log(data)
                 Client.Peers.peers.map((peer) => peer && peer.sendChannel && peer.sendChannel.send(JSON.stringify(data)));
             } catch (e) { }
         },
